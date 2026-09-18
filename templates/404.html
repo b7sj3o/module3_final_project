@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Page not found{% endblock %}
+
+{% block content %}
+<main class="static-page-wrapper">
+    <div class="container">
+        <div class="static-page-content">
+            <h1 class="static-page-title">404</h1>
+            <p class="static-page-subtitle">Page not found</p>
+            <div class="static-page-text">
+                <p>Sorry, the page you are looking for does not exist or has been moved.</p>
+            </div>
+            <a href="{% url 'catalog:home' %}" class="button button--primary">Back to Home</a>
+        </div>
+    </div>
+</main>
+{% endblock %}

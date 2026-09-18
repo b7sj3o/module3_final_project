@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<main class="auth-page-wrapper">
+    <div class="auth-background">
+        <img src="{% static 'img/background/pattern.jpg' %}" alt="Background pattern">
+    </div>
+    <div class="auth-form-container">
+        <div class="auth-container auth-container--login">
+            <div class="Legend">
+                <h1 class="auth-title">Sign In</h1>
+            </div>
+
+            <form class="auth-form" method="post" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                {% include "partials/form_errors.html" with form=form %}
+                <div class="InputField">
+                    <label for="{{ form.username.id_for_label }}">Username</label>
+                    <input type="text" id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" value="{{ form.username.value|default:'' }}" class="Input{% if form.username.errors %} is-invalid{% endif %}" required autofocus>
+                </div>
+                <div class="InputField">
+                    <label for="{{ form.password.id_for_label }}">Password</label>
+                    <input type="password" id="{{ form.password.id_for_label }}" name="{{ form.password.html_name }}" class="Input{% if form.password.errors %} is-invalid{% endif %}" required>
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div class="ButtonGroup">
+                    <button type="submit" class="button button--primary">Sign In</button>
+                </div>
+            </form>
+
+            <p class="auth-switch">Don&rsquo;t have an account? <a href="{% url 'accounts:register' %}">Sign up</a></p>
+        </div>
+    </div>
+</main>
+{% endblock %}

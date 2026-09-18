@@ -1,0 +1,82 @@
+{% extends "admin/base_site.html" %}
+{% load static shop_tags %}
+
+{% block title %}Analytics | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-wrapper">
+    <div class="admin-container">
+        <div class="admin-content__header">
+            <h1 class="admin-content__title">Sales analytics</h1>
+        </div>
+
+        <div class="analytics-cards stats-grid">
+            <div class="stat-card">
+                <div class="stat-card__header"><span class="stat-card__title">Revenue</span></div>
+                <p class="stat-card__value">{{ summary.revenue|money }}</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__header"><span class="stat-card__title">Orders</span></div>
+                <p class="stat-card__value">{{ summary.orders_count }}</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__header"><span class="stat-card__title">Average check</span></div>
+                <p class="stat-card__value">{{ summary.average_check|money }}</p>
+            </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+            <h2 class="admin-form-section-title">Top products</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Product</th><th>Sold</th></tr>
+                </thead>
+                <tbody>
+                    {% for product in top_products %}
+                        <tr><td>{{ product.name }}</td><td>{{ product.sold_qty }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="2">No sales yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-table-wrapper">
+            <h2 class="admin-form-section-title">Orders by status</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Status</th><th>Count</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in by_status %}
+                        <tr><td>{{ row.label }}</td><td>{{ row.count }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="2">No orders yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-table-wrapper">
+            <h2 class="admin-form-section-title">Revenue by day</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Day</th><th>Orders</th><th>Revenue</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in by_day %}
+                        <tr><td>{{ row.day }}</td><td>{{ row.orders }}</td><td>{{ row.revenue|money }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="3">No data yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

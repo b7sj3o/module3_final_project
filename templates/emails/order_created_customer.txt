@@ -1,0 +1,18 @@
+{% load shop_tags %}Hello {{ order.full_name }},
+
+Thank you for your order at {{ shop_name }}!
+
+Order #{{ order.id }} ({{ order.created_at|date:"j M Y" }})
+Payment method: {{ order.get_payment_method_display }}
+
+Items:
+{% for item in order.items.all %}- {{ item.product.name }} x{{ item.quantity }} -- {{ item.line_total|money }}
+{% endfor %}
+Total: {{ order.total_price|money }}
+
+Shipping address:
+{{ order.shipping_address }}
+
+We will notify you when your order status changes.
+
+{{ shop_name }}

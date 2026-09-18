@@ -1,0 +1,48 @@
+{% load static %}
+<header>
+    <div class="header-container">
+        <a href="{% url 'catalog:home' %}" class="header__logo">
+            <img src="{% static 'img/logo.svg' %}" alt="{{ SHOP_NAME }} Logo">
+            <p class="logo-text">{{ SHOP_NAME }}</p>
+        </a>
+        <nav class="header__nav">
+            <ul>
+                <li><a href="{% url 'catalog:product_list' %}">Products</a></li>
+                {% if categories %}
+                <li class="header__nav-dropdown">
+                    <a href="{% url 'catalog:product_list' %}">Categories</a>
+                    <ul class="header__nav-dropdown-menu">
+                        {% for category in categories %}
+                            <li><a href="{{ category.get_absolute_url }}">{{ category.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endif %}
+                <li><a href="#">Community</a></li>
+                <li><a href="#">Resources</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </nav>
+
+        <div class="header__user-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}" class="user-icon" aria-label="My Account">
+                    <img src="{% static 'img/icons/User_alt.svg' %}" alt="User Account">
+                </a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="button button--secondary">Sign in</a>
+                <a href="{% url 'accounts:register' %}" class="button button--primary">Register</a>
+            {% endif %}
+            <a href="{% url 'orders:cart' %}" class="cart-icon" aria-label="Shopping Cart">
+                <img src="{% static 'img/icons/Shopping_bag.svg' %}" alt="Shopping Cart">
+                {% if cart_count %}<span class="header__cart-count">{{ cart_count }}</span>{% endif %}
+            </a>
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'accounts:logout' %}" class="header__logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="button button--logout">Logout</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</header>

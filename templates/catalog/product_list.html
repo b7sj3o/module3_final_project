@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<main>
+    <div class="container main-content-grid">
+        <aside class="sidebar filter-menu">
+            <form method="get" action="{% url 'catalog:product_list' %}" class="filter-form">
+                <div class="sidebar__section">
+                    <h3 class="section-title">Search</h3>
+                    <div class="search-input-wrapper">
+                        <input type="text" name="search" value="{{ filter.form.search.value|default:'' }}" placeholder="Search" class="search-input">
+                        <button type="submit" class="search-button" aria-label="Search">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar__section">
+                    <h3 class="section-title">Category</h3>
+                    <select name="category" class="filter-form__select">
+                        <option value="">All categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.slug }}" {% if filter.form.category.value == category.slug %}selected{% endif %}>{{ category.name }}</option>
+                            {% for child in category.children.all %}
+                                <option value="{{ child.slug }}" {% if filter.form.category.value == child.slug %}selected{% endif %}>&nbsp;&nbsp;&nbsp;&nbsp;{{ child.name }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="sidebar__section">
+                    <h3 class="section-title">Price</h3>
+                    <div class="filter-form__price-range">
+                        <input type="number" name="min_price" min="0" step="0.01" value="{{ filter.form.min_price.value|default:'' }}" placeholder="Min" class="Input">
+                        <input type="number" name="max_price" min="0" step="0.01" value="{{ filter.form.max_price.value|default:'' }}" placeholder="Max" class="Input">
+                    </div>
+                </div>
+
+                <div class="sidebar__section">
+                    <label class="checkbox-container">In stock only
+                        <input type="checkbox" name="in_stock" value="true" {% if request.GET.in_stock %}checked{% endif %}>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+
+                {% if request.GET.ordering %}
+                    <input type="hidden" name="ordering" value="{{ request.GET.ordering }}">
+                {% endif %}
+
+                <button type="submit" class="button button--primary button--full-width">Apply filters</button>
+            </form>
+        </aside>
+
+        <section class="products-area product-grid-section">
+            <div class="search-sort-bar">
+                <div class="sort-options">
+                    <a href="{% querystring ordering='-created_at' %}" class="sort-button {% if not request.GET.ordering or request.GET.ordering == '-created_at' %}active-sort{% endif %}">
+                        <span>New</span>
+                    </a>
+                    <a href="{% querystring ordering='price' %}" class="sort-button {% if request.GET.ordering == 'price' %}active-sort{% endif %}">Price ascending</a>
+                    <a href="{% querystring ordering='-price' %}" class="sort-button {% if request.GET.ordering == '-price' %}active-sort{% endif %}">Price descending</a>
+                    <a href="{% querystring ordering='-rating' %}" class="sort-button {% if request.GET.ordering == '-rating' %}active-sort{% endif %}">Rating</a>
+                </div>
+            </div>
+
+            <div class="product-grid">
+                {% for product in products %}
+                    {% include "partials/product_card.html" with product=product %}
+                {% empty %}
+                    <p class="empty-state">No products match your filters.</p>
+                {% endfor %}
+            </div>
+
+            {% include "partials/pagination.html" %}
+        </section>
+    </div>
+</main>
+{% endblock %}
