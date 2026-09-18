@@ -12,7 +12,9 @@ dependencies = [
     "djangorestframework-simplejwt>=5.5.1",
     "drf-spectacular>=0.30.0",
     "gunicorn>=26.2.0",
+    "pillow>=12.3.0",
     "psycopg[binary]>=3.3.5",
+    "whitenoise>=6.12.0",
 ]
 
 [dependency-groups]
@@ -72,7 +74,7 @@ select =  [
 [tool.mypy]
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 python_version = "3.12"
-exclude = ["migrations/"]
+exclude = ["migrations/", "local_docs/"]
 
 [[tool.mypy.overrides]]
 module = "environ"

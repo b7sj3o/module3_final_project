@@ -2,10 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
-
+    branches: ["main"]
 
 jobs:
   checks:
@@ -16,8 +15,6 @@ jobs:
         image: postgres:17-alpine
         ports:
           - "5432:5432"
-        volumes:
-          - pgdata:/var/lib/postgresql/data
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -28,14 +25,13 @@ jobs:
           --health-retries 10
 
     env:
-      DJANGO_SETTINGS_MODULE: config.settings.local
       SECRET_KEY: ci-secret
-      DATABASE_URL: postgres://shop:shop@localhost:5432/shop
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/final3
 
     steps:
-        - uses: actions/checkout@v7
-        - uses: astral-sh/setup-uv@v7
-        - run: uv sync
-        - run: uv run ruff check .
-#        - run: uv run mypy .
-        - run: uv run pytest .
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run mypy .
+      - run: uv run pytest
