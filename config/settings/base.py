@@ -94,4 +94,4 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 
-REST_FRAMEWORK = {}
+REST_FRAMEWORK: dict = {}
