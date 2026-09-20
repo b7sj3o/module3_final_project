@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 
 from apps.core.models import TimeStampedModel
 
@@ -26,7 +27,7 @@ class Category(TimeStampedModel):
 class ProductQuerySet(models.QuerySet):
     # TODO: повертати лише активні продукти
     def active(self):
-        return self
+        return self.filter(is_active=True)
 
 
 class Product(TimeStampedModel):
@@ -53,3 +54,7 @@ class Product(TimeStampedModel):
         return self.name
 
     # TODO: override save() і добавити автоматичний slug, якщо він пустий
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)

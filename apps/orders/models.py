@@ -15,7 +15,7 @@ class Order(TimeStampedModel):
         DELIVERED = "delivered", "Delivered"
         CANCELLED = "cancelled", "Cancelled"
 
-    order_number = models.PositiveIntegerField(auto_created=True) # TODO: зробити autoincrement
+    order_number = models.BigAutoField(primary_key=True) # TODO: зробити autoincrement +
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -37,8 +37,22 @@ class Order(TimeStampedModel):
         return f"#{self.order_number}"
 
 
-    # TODO: override save() щоб розрахувати total_price з OrderItem[]
+    # TODO: override save() щоб розрахувати total_price з OrderItem[] +
+    def save(self, *args, **kwargs):
+        # Спочатку зберігаємо саме замовлення, щоб у нього з'явився ID в базі (якщо це нове замовлення)
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
 
+        # Якщо замовлення вже існувало або ми перераховуємо суму після додавання OrderItem
+        if not is_new and self.items.exists():
+            # Рахуємо суму всіх пов'язаних OrderItem через property total
+            total = sum(item.total for item in self.items.all())
+
+            # Якщо порахована сума відрізняється від поточної total_price, оновлюємо її
+            if self.total_price != total:
+                self.total_price = total
+                # Використовуємо update_fields, щоб уникнути нескінченної рекурсії при повторному save()
+                super().save(update_fields=['total_price'])
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
@@ -59,6 +73,6 @@ class OrderItem(models.Model):
 
     @property
     def total(self) -> Decimal:
-        # TODO: підрахунок загальної ціни цього продукту в замовленні
-        return Decimal("0")
+        # TODO: підрахунок загальної ціни цього продукту в замовленні +
+        return Decimal(self.quantity) * self.price
 
