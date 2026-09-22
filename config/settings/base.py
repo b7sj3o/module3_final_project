@@ -57,6 +57,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.core.context_processors.shop",
             ],
         },
     },
@@ -92,6 +93,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+SHOP_NAME = env("SHOP_NAME", default="Hop & Barley")
+SHOP_CURRENCY = "$"
 
 
 REST_FRAMEWORK: dict = {}

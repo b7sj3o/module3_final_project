@@ -1,1 +1,33 @@
-# Create your views here.
+from django.views.generic import TemplateView
+
+
+class CartView(TemplateView):
+    ...
+
+
+class CartAddView(TemplateView):
+    ...
+
+
+class CartUpdateView(TemplateView):
+    ...
+
+
+class CartRemoveView(TemplateView):
+    ...
+
+
+class CheckoutView(TemplateView):
+    ...
+
+
+class OrderListView(TemplateView):
+    ...
+
+
+class OrderDetailView(TemplateView):
+    ...
+
+
+class OrderCancelView(TemplateView):
+    ...

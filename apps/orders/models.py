@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
+from django.db.models import DecimalField, F, Sum
 
 from apps.catalog.models import Product
 from apps.core.models import TimeStampedModel
@@ -33,21 +34,33 @@ class Order(TimeStampedModel):
         return f"Order #{self.pk}"
 
     # TODO: override save() щоб розрахувати total_price з OrderItem[] +
-    def save(self, *args, **kwargs):
-        # Спочатку зберігаємо саме замовлення, щоб у нього з'явився ID в базі (якщо це нове замовлення)
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     # Спочатку зберігаємо саме замовлення, щоб у нього з'явився ID в базі (якщо це нове замовлення)
+    #     is_new = self.pk is None
+    #     super().save(*args, **kwargs)
+    #
+    #     # Якщо замовлення вже існувало або ми перераховуємо суму після додавання OrderItem
+    #     if not is_new and self.items.exists():
+    #         # Рахуємо суму всіх пов'язаних OrderItem через property total
+    #         total = sum(item.total for item in self.items.all())
+    #
+    #         # Якщо порахована сума відрізняється від поточної total_price, оновлюємо її
+    #         if self.total_price != total:
+    #             self.total_price = total
+    #             # Використовуємо update_fields, щоб уникнути нескінченної рекурсії при повторному save()
+    #             super().save(update_fields=["total_price"])
 
-        # Якщо замовлення вже існувало або ми перераховуємо суму після додавання OrderItem
-        if not is_new and self.items.exists():
-            # Рахуємо суму всіх пов'язаних OrderItem через property total
-            total = sum(item.total for item in self.items.all())
-
-            # Якщо порахована сума відрізняється від поточної total_price, оновлюємо її
-            if self.total_price != total:
-                self.total_price = total
-                # Використовуємо update_fields, щоб уникнути нескінченної рекурсії при повторному save()
-                super().save(update_fields=["total_price"])
+    def recalculate_total(self) -> Decimal:
+        """Recalculate total_price from the current order items."""
+        result = self.items.aggregate(
+            total=Sum(
+                F("price") * F("quantity"),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
+            )
+        )
+        self.total_price = result["total"] or Decimal("0")
+        self.save(update_fields=["total_price", "updated_at"])
+        return self.total_price
 
 
 class OrderItem(models.Model):
