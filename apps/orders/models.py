@@ -6,32 +6,69 @@ from django.db.models import DecimalField, F, Sum
 
 from apps.catalog.models import Product
 from apps.core.models import TimeStampedModel
+from apps.delivery.models import DeliveryType
 
 
 class Order(TimeStampedModel):
     class OrderStatus(models.TextChoices):
-        PENDING = "pending", "Pending"
-        PAID = "paid", "Paid"
-        SHIPPED = "shipped", "Shipped"
-        DELIVERED = "delivered", "Delivered"
-        CANCELLED = "cancelled", "Cancelled"
+        PENDING = "pending", "Очікує оплати"
+        PAID = "paid", "Оплачено"
+        SHIPPED = "shipped", "Відправлено"
+        DELIVERED = "delivered", "Доставлено"
+        CANCELLED = "cancelled", "Скасовано"
+
+    class PaymentMethod(models.TextChoices):
+        CARD = "card", "Банківська картка"
+        WALLET = "wallet", "Apple Pay / Google Pay"
+        COD = "cod", "Оплата при отриманні"
+
+    DeliveryType = DeliveryType
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="orders",
+        verbose_name="покупець",
     )
     status = models.CharField(
-        choices=OrderStatus.choices, default=OrderStatus.PENDING, max_length=10
+        "статус", choices=OrderStatus.choices, default=OrderStatus.PENDING, max_length=10
     )
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
-    shipping_address = models.TextField()
+    total_price = models.DecimalField("сума", max_digits=10, decimal_places=2, default=Decimal("0"))
+    shipping_address = models.TextField("адреса доставки")
+
+    # Contact details and delivery, as entered at checkout.
+    last_name = models.CharField("прізвище", max_length=150, blank=True)
+    first_name = models.CharField("ім'я", max_length=150, blank=True)
+    middle_name = models.CharField("по батькові", max_length=150, blank=True)
+    email = models.EmailField("email", blank=True)
+    phone = models.CharField("телефон", max_length=32, blank=True)
+    payment_method = models.CharField(
+        "спосіб оплати", choices=PaymentMethod.choices, default=PaymentMethod.CARD, max_length=10
+    )
+    delivery_type = models.CharField(
+        "спосіб доставки", choices=DeliveryType.choices, default=DeliveryType.BRANCH, max_length=10
+    )
+    np_city_ref = models.CharField("ref міста НП", max_length=36, blank=True)
+    np_warehouse_ref = models.CharField("ref відділення НП", max_length=36, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "замовлення"
+        verbose_name_plural = "замовлення"
 
     def __str__(self) -> str:
-        return f"Order #{self.pk}"
+        return f"Замовлення №{self.pk}"
+
+    @property
+    def full_name(self) -> str:
+        return " ".join(
+            part for part in (self.last_name, self.first_name, self.middle_name) if part
+        )
+
+    @property
+    def can_cancel(self) -> bool:
+        """An order can be cancelled until it has been shipped."""
+        return self.status in (self.OrderStatus.PENDING, self.OrderStatus.PAID)
 
     # TODO: override save() щоб розрахувати total_price з OrderItem[] +
     # def save(self, *args, **kwargs):
@@ -68,14 +105,20 @@ class OrderItem(models.Model):
         Order,
         on_delete=models.CASCADE,
         related_name="items",
+        verbose_name="замовлення",
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
         related_name="order_items",
+        verbose_name="товар",
     )
-    quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField("кількість")
+    price = models.DecimalField("ціна", max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = "позиція замовлення"
+        verbose_name_plural = "позиції замовлення"
 
     def __str__(self) -> str:
         return f"{self.product} x {self.quantity}"

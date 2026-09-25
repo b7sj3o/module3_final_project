@@ -1,18 +1,31 @@
 import django_filters as filters
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 
 from .models import Category, Product
+
+
+class StableOrderingFilter(filters.OrderingFilter):
+    def filter(self, qs, value):
+        qs = super().filter(qs, value)
+        if value:
+            qs = qs.order_by(*qs.query.order_by, "-pk")
+        return qs
 
 
 class ProductFilter(filters.FilterSet):
     """Filters for the product list. The same class will later serve the API."""
 
-    search = filters.CharFilter(method="filter_search", label="Search")
-    category = filters.CharFilter(method="filter_category", label="Category")
+    search = filters.CharFilter(method="filter_search", label="Пошук")
+    category = filters.ModelMultipleChoiceFilter(
+        queryset=Category.objects.all(),
+        to_field_name="slug",
+        method="filter_category",
+        label="Тип товару",
+    )
     min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
     max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
-    in_stock = filters.BooleanFilter(method="filter_in_stock", label="In stock only")
-    ordering = filters.OrderingFilter(
+    in_stock = filters.BooleanFilter(method="filter_in_stock", label="Лише в наявності")
+    ordering = StableOrderingFilter(
         fields=(
             ("price", "price"),
             ("created_at", "created_at"),
@@ -26,15 +39,14 @@ class ProductFilter(filters.FilterSet):
         fields: list[str] = []
 
     def filter_search(self, queryset, name, value):
-        # TODO: """K4-G1: search in name and description."""
-        return queryset
+        """Search in product name and description."""
+        return queryset.filter(self._search_query(value))
 
     def filter_category(self, queryset, name, value):
-        # TODO: """K4-G2: filter by category slug, including its child categories."""
-        category = Category.objects.filter(slug=value).first()
-        if category is None:
+        """Filter by one or more categories, including products of their subcategories."""
+        if not value:
             return queryset
-        return queryset.filter(category=category)
+        return queryset.filter(Q(category__in=value) | Q(category__parent__in=value))
 
     def filter_in_stock(self, queryset, name, value):
         if not value:
