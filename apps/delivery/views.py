@@ -1,3 +1,4 @@
+import logging
 from dataclasses import asdict
 
 from django.core.cache import cache
@@ -8,6 +9,7 @@ from .novaposhta import NovaPoshtaError, get_client
 
 # Cities and branches change rarely: keep search results for a day.
 CACHE_SECONDS = 60 * 60 * 24
+logger = logging.getLogger(__name__)
 UNAVAILABLE = {"error": "Сервіс доставки недоступний. Спробуйте пізніше."}
 
 
@@ -27,7 +29,8 @@ class CitySearchView(View):
                 )
                 or []
             )
-        except NovaPoshtaError:
+        except NovaPoshtaError as error:
+            logger.warning("Nova Poshta: %s", error)  # e.g. an expired API key
             return JsonResponse(UNAVAILABLE, status=503)
         return JsonResponse({"results": [asdict(city) | {"label": city.label} for city in cities]})
 
@@ -50,6 +53,7 @@ class WarehouseSearchView(View):
                 )
                 or []
             )
-        except NovaPoshtaError:
+        except NovaPoshtaError as error:
+            logger.warning("Nova Poshta: %s", error)  # e.g. an expired API key
             return JsonResponse(UNAVAILABLE, status=503)
         return JsonResponse({"results": [asdict(warehouse) for warehouse in warehouses]})

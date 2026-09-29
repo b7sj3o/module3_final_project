@@ -36,3 +36,18 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy .
       - run: uv run pytest
+      - name: Production settings pass the deploy check
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.prod
+          ALLOWED_HOSTS: shop.example.com
+          EMAIL_HOST: smtp.resend.com  # Django 6.1 also refuses the console mailer in production
+        run: |
+          export SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(50))")
+          uv run manage.py check --deploy --fail-level WARNING
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Production image builds (collectstatic included)
+        run: docker build -t hop-and-barley .

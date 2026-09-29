@@ -1,9 +1,12 @@
+import logging
 from typing import Any
 
 from django import forms
 
 from .models import DeliveryType
 from .novaposhta import NovaPoshtaError, get_client
+
+logger = logging.getLogger(__name__)
 
 
 class DeliveryForm(forms.Form):
@@ -21,7 +24,8 @@ class DeliveryForm(forms.Form):
         widget=forms.HiddenInput, error_messages={"required": "Оберіть місто зі списку."}
     )
     delivery_type = forms.ChoiceField(label="Спосіб доставки", choices=DeliveryType.choices)
-    warehouse_name = forms.CharField(label="Відділення", max_length=300)
+    # Only a label for the page: the branch itself is warehouse_ref, its name comes from the API.
+    warehouse_name = forms.CharField(label="Відділення", max_length=300, required=False)
     warehouse_ref = forms.CharField(
         widget=forms.HiddenInput, error_messages={"required": "Оберіть відділення зі списку."}
     )
@@ -49,6 +53,7 @@ class DeliveryForm(forms.Form):
         try:
             warehouse = get_client().get_warehouse(data["warehouse_ref"])
         except NovaPoshtaError as error:
+            logger.warning("Nova Poshta: %s", error)
             raise forms.ValidationError(
                 "Не вдалося перевірити відділення. Спробуйте ще раз за хвилину."
             ) from error

@@ -7,7 +7,7 @@ The API answers HTTP 200 even on errors, so we check the `success` flag instead.
 from dataclasses import dataclass
 from typing import Any
 
-import requests  # noqa: F401  # used in call(), written at K5
+import requests
 from django.conf import settings
 
 POSTOMAT_TYPE_REF = "f9316480-5f2d-425d-bc2c-ac7cd29decf0"  # Address/getWarehouseTypes
@@ -53,7 +53,7 @@ class NovaPoshtaClient:
             "apiKey": self.api_key,
             "modelName": model,
             "calledMethod": method,
-            "methodProperties": properties
+            "methodProperties": properties,
         }
         try:
             response = requests.post(self.api_url, json=payload, timeout=self.timeout)
@@ -67,28 +67,16 @@ class NovaPoshtaClient:
         return body["data"]
 
     def search_cities(self, query: str, limit: int = 10) -> list[City]:
-        # TODO(K5): Address/getCities with FindByString; NOTHING_FOUND error -> [].
-        result = self.call(
-            "Address",
-            "getCities",
-            FindByString=query,
-            Limit=str(limit),
-        )
-
-        addresses = []
-
         try:
-            for address in result:
-                addresses.append(City(
-                    ref=address["Ref"],
-                    name=address["Description"],
-                    area=address["AreaDescription"],
-                ))
-        except KeyError as error:
-            return []
-
-        return addresses
-
+            rows = self.call("Address", "getCities", FindByString=query, Limit=str(limit))
+        except NovaPoshtaError as error:
+            if NOTHING_FOUND in str(error):
+                return []
+            raise
+        return [
+            City(ref=row["Ref"], name=row["Description"], area=row.get("AreaDescription", ""))
+            for row in rows
+        ]
 
     def search_warehouses(
         self, city_ref: str, query: str = "", postomat: bool = False, limit: int = 20

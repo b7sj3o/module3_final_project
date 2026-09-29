@@ -23,7 +23,6 @@ def post(monkeypatch) -> Mock:
     return mock
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G3: клієнт Нової Пошти (apps/delivery/novaposhta.py)")
 def test_client_sends_model_and_method_in_body(post: Mock) -> None:
     post.return_value = api_answer(
         [{"Ref": "c1", "Description": "Львів", "AreaDescription": "Львівська"}]
@@ -38,7 +37,6 @@ def test_client_sends_model_and_method_in_body(post: Mock) -> None:
     assert cities[0].label == "Львів (Львівська обл.)"
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G3: клієнт Нової Пошти (apps/delivery/novaposhta.py)")
 def test_client_keeps_only_requested_kind_of_warehouse(post: Mock) -> None:
     row = {"CityRef": "c1", "CityDescription": "Львів", "Number": "1"}
     post.return_value = api_answer(
@@ -53,7 +51,6 @@ def test_client_keeps_only_requested_kind_of_warehouse(post: Mock) -> None:
     assert [w.ref for w in branches] == ["w1"]
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G3: клієнт Нової Пошти (apps/delivery/novaposhta.py)")
 def test_client_raises_when_api_says_no(post: Mock) -> None:
     post.return_value = api_answer([], success=False, errors=["API key is invalid"])
 
@@ -61,7 +58,6 @@ def test_client_raises_when_api_says_no(post: Mock) -> None:
         NovaPoshtaClient("bad", API_URL).search_cities("Київ")
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G3: клієнт Нової Пошти (apps/delivery/novaposhta.py)")
 def test_city_not_found_is_an_empty_list(post: Mock) -> None:
     post.return_value = api_answer([], success=False, errors=["FindByString is not specified"])
 

@@ -36,7 +36,6 @@ def add_to_cart(client: Client, product: Product, quantity: int = 1):
 # --- Cart ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G1: кошик у сесії (apps/orders/cart.py)")
 def test_add_to_cart_keeps_product_in_session(client: Client, product: Product) -> None:
     add_to_cart(client, product)
     add_to_cart(client, product, 2)
@@ -44,7 +43,6 @@ def test_add_to_cart_keeps_product_in_session(client: Client, product: Product) 
     assert cart_of(client) == {str(product.pk): 3}
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G1: кошик у сесії (apps/orders/cart.py)")
 def test_cannot_add_more_than_in_stock(client: Client, product: Product) -> None:
     response = add_to_cart(client, product, product.stock + 1)
 
@@ -52,7 +50,6 @@ def test_cannot_add_more_than_in_stock(client: Client, product: Product) -> None
     assert "лишилось лише" in str(list(response.wsgi_request._messages)[0])
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G1: кошик у сесії (apps/orders/cart.py)")
 def test_cart_page_counts_total(client: Client, product: Product) -> None:
     add_to_cart(client, product, 2)
 
@@ -153,7 +150,6 @@ def test_checkout_with_empty_cart_goes_back_to_cart(client: Client, user: User) 
     assert response["Location"] == reverse("orders:cart")
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G2: create_order (apps/orders/services.py)")
 def test_checkout_creates_order(
     buyer: Client, user: User, product: Product, nova_poshta, django_capture_on_commit_callbacks
 ) -> None:
@@ -176,14 +172,12 @@ def test_checkout_creates_order(
     assert mail.outbox[0].to == ["alice@example.com"]
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G2: create_order (apps/orders/services.py)")
 def test_cash_on_delivery_order_stays_pending(buyer: Client, user: User, nova_poshta) -> None:
     buyer.post(reverse("orders:checkout"), CHECKOUT_DATA | {"payment_method": "cod"})
 
     assert Order.objects.get(user=user).status == Order.OrderStatus.PENDING
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G2: create_order (apps/orders/services.py)")
 def test_price_is_taken_at_purchase_time(
     buyer: Client, user: User, product: Product, nova_poshta
 ) -> None:
@@ -206,7 +200,6 @@ def test_no_order_when_stock_ran_out(
     assert product.stock == 2
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G1: кошик у сесії (apps/orders/cart.py)")
 def test_invalid_form_shows_errors_and_keeps_cart(buyer: Client, product: Product) -> None:
     response = buyer.post(reverse("orders:checkout"), CHECKOUT_DATA | {"phone": "bad"})
 
@@ -215,7 +208,6 @@ def test_invalid_form_shows_errors_and_keeps_cart(buyer: Client, product: Produc
     assert cart_of(buyer) == {str(product.pk): 3}
 
 
-@pytest.mark.xfail(strict=True, reason="K5-G2: create_order (apps/orders/services.py)")
 def test_order_remembers_delivery_for_next_checkout(
     buyer: Client, user: User, product: Product, nova_poshta
 ) -> None:
