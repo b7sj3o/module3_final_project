@@ -84,7 +84,7 @@ class NovaPoshtaClient:
                     name=address["Description"],
                     area=address["AreaDescription"],
                 ))
-        except KeyError as error:
+        except KeyError:
             return []
 
         return addresses
