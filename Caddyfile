@@ -1,0 +1,17 @@
+# Caddy in front of Django: HTTPS with a free Let's Encrypt certificate,
+# issued and renewed automatically for SITE_DOMAIN (localhost -> Caddy's own local certificate).
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Uploaded product photos: straight from the media volume, Django is not involved.
+	handle_path /media/* {
+		root * /srv/media
+		file_server
+	}
+
+	# Everything else goes to gunicorn. Caddy adds X-Forwarded-Proto: https itself.
+	reverse_proxy web:8000 {
+		header_down -Server  # do not tell the world what runs behind
+	}
+}
+

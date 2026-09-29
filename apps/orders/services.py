@@ -4,6 +4,7 @@ from typing import Any
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
+from django.db.models import F
 from django.template.loader import render_to_string
 
 from apps.accounts.models import User
@@ -29,9 +30,7 @@ def create_order(user: User, cart: Cart, data: dict[str, Any]) -> Order:
     if not cart.items:
         raise CheckoutError("Кошик порожній.")
 
-    products = Product.objects.select_for_update().active().in_bulk(
-        [int(pk) for pk in cart.items]
-    )
+    products = Product.objects.select_for_update().active().in_bulk([int(pk) for pk in cart.items])
     for pk, quantity in cart.items.items():
         product = products.get(int(pk))
         if product is None:
@@ -42,21 +41,29 @@ def create_order(user: User, cart: Cart, data: dict[str, Any]) -> Order:
     warehouse: Warehouse = data["warehouse"]
     order = Order.objects.create(
         user=user,
-        last_name=data["last_name"], first_name=data["first_name"],
-        middle_name=data["middle_name"], email=user.email, phone=data["phone"],
+        last_name=data["last_name"],
+        first_name=data["first_name"],
+        middle_name=data["middle_name"],
+        email=user.email,
+        phone=data["phone"],
         payment_method=data["payment_method"],
-        status=(Order.OrderStatus.PENDING
-                if data["payment_method"] == Order.PaymentMethod.COD
-                else Order.OrderStatus.PAID),  # оплата — мок
+        status=(
+            Order.OrderStatus.PENDING
+            if data["payment_method"] == Order.PaymentMethod.COD
+            else Order.OrderStatus.PAID
+        ),  # оплата — мок
         delivery_type=data["delivery_type"],
-        np_city_ref=warehouse.city_ref, np_warehouse_ref=warehouse.ref,
+        np_city_ref=warehouse.city_ref,
+        np_warehouse_ref=warehouse.ref,
         shipping_address=f"{warehouse.city_name}, {warehouse.name}",
     )
 
     items = []
     for pk, quantity in cart.items.items():
         product = products[int(pk)]
-        items.append(OrderItem(order=order, product=product, quantity=quantity, price=product.price))
+        items.append(
+            OrderItem(order=order, product=product, quantity=quantity, price=product.price)
+        )
         product.stock -= quantity
 
     OrderItem.objects.bulk_create(items)
@@ -67,6 +74,20 @@ def create_order(user: User, cart: Cart, data: dict[str, Any]) -> Order:
     transaction.on_commit(lambda: send_order_emails(order))
 
     return order
+
+
+@transaction.atomic
+def cancel_order(order: Order) -> Order:
+    """Cancel an order that has not been shipped yet and put its items back in stock."""
+    order = Order.objects.select_for_update().get(pk=order.pk)
+    if not order.can_cancel:
+        raise CheckoutError("Замовлення вже відправлене, скасувати його не можна.")
+    for item in order.items.select_related("product"):
+        Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
+    order.status = Order.OrderStatus.CANCELLED
+    order.save(update_fields=["status", "updated_at"])
+    return order
+
 
 def remember_customer(user: User, data: dict[str, Any]) -> None:
     """Next checkout is prefilled: keep the last delivery point, and name/phone if missing."""
